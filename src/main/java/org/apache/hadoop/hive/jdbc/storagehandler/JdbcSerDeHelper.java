@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -86,12 +88,13 @@ public class JdbcSerDeHelper {
 
         for (String key : tblProps.stringPropertyNames()) {
             // LOG.info(">> " + key + ">> " + tblProps.getProperty(key));
+            key = StringEscapeUtils.escapeSql(key);
             if (key.contains("jdbc.input.table.name")) {
-                String value = tblProps.getProperty(key);
+                String value = sanitizeString(tblProps.getProperty(key));
                 tableName = value;
             }
             if (key.startsWith("mapred.jdbc.")) {
-                String value = tblProps.getProperty(key);
+                String value = sanitizeString(tblProps.getProperty(key));
                 sysConf.set(key, value);
                 key = key.replaceAll("mapred", "mapreduce");
                 sysConf.set(key, value);
@@ -100,12 +103,17 @@ public class JdbcSerDeHelper {
         }
         for (String key : tblProps.stringPropertyNames()) {
             if (key.startsWith("mapreduce.jdbc.")) {
-                String value = tblProps.getProperty(key);
+                String value = sanitizeString(tblProps.getProperty(key));
                 sysConf.set(key, value);
                 key = key.replaceAll("mapreduce", "mapred");
                 sysConf.set(key, value);
             }
         }
+    }
+
+    public String sanitizeString(String value) {
+        // method to sanitize input string
+        return StringEscapeUtils.escapeSql(value);
     }
 
     public String getSelectQuery(Properties tblProps) {
